@@ -7,11 +7,11 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-from werkzeug.middleware.proxy_fix import ProxyFix
-
-app.wsgi_app = ProxyFix(
-    app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
-)
+# from werkzeug.middleware.proxy_fix import ProxyFix
+#
+# app.wsgi_app = ProxyFix(
+#     app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1
+# )
 
 def get_weather(location):
     url = "http://api.weatherapi.com/v1/current.json?key=bd9253c192f247cb9c835024241906&q=" + location
