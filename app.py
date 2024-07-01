@@ -1,12 +1,18 @@
-import os
 from openai import OpenAI
 from flask import Flask, render_template, request, flash, redirect, url_for, session
-import json, requests, markdown2, asyncio
+import json, requests, markdown2, os, asyncio
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-print(os.getenv("OPENAI_API_KEY"))
+
+import httpx
+
+try:
+    response = httpx.get('https://api.openai.com/v1')
+    print(response.status_code)
+except Exception as e:
+    print(f"Network error: {e}")
 
 # from werkzeug.middleware.proxy_fix import ProxyFix
 #
