@@ -108,9 +108,9 @@ def message():
     html_result = markdown2.markdown(result)
     return html_result
 
-# from gevent.pywsgi import WSGIServer
-#
-# if __name__ == "__main__":
-#     http_server = WSGIServer(('0.0.0.0', 8000), app)
-#     http_server.serve_forever()
-#     app.run(debug=True)
+from gevent.pywsgi import WSGIServer
+
+if __name__ == "__main__":
+    http_server = WSGIServer(('0.0.0.0', 8000), app)
+    http_server.serve_forever()
+    app.run(debug=True)
