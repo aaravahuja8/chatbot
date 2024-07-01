@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename = 'css/style.css') }}">
+    <title>Chat Bot</title>
+</head>
+<body>
+<h1>Chat Bot</h1>
+<br>
+<div id="chat">
+</div>
+<label for="message">Chat here: </label> <input id="message" name="message" required type="text" value="">
+<input id="submit" name="submit" type="submit" value="Send">
+<script src="{{ url_for('static', filename = 'js/script.js') }}"></script>
+</body>
+</html>
