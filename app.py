@@ -1,5 +1,4 @@
 import os
-
 from openai import OpenAI
 from flask import Flask, render_template, request, flash, redirect, url_for, session
 import json, requests, markdown2, asyncio
