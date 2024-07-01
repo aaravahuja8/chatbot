@@ -6,6 +6,7 @@ import json, requests, markdown2, asyncio
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+print(os.getenv("OPENAI_API_KEY"))
 
 # from werkzeug.middleware.proxy_fix import ProxyFix
 #
