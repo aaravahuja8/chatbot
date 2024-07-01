@@ -40,7 +40,6 @@ tools=[
 ]
 
 def get_openai_response(messages):
-    print("b")
     response = client.chat.completions.create(
         model="gpt-4o",
         tools=tools,
@@ -54,7 +53,6 @@ def get_openai_response(messages):
     return response.choices[0].message.content
 
 def get_weather_response(messages):
-    print("a")
     response = client.chat.completions.create(
         model="gpt-4o",
         tools=tools,
@@ -110,9 +108,9 @@ def message():
     html_result = markdown2.markdown(result)
     return html_result
 
-from gevent.pywsgi import WSGIServer
-
-if __name__ == "__main__":
-    http_server = WSGIServer(('0.0.0.0', 8000), app)
-    http_server.serve_forever()
-    app.run(debug=True)
+# from gevent.pywsgi import WSGIServer
+#
+# if __name__ == "__main__":
+#     http_server = WSGIServer(('0.0.0.0', 8000), app)
+#     http_server.serve_forever()
+#     app.run(debug=True)
