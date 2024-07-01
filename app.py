@@ -6,14 +6,6 @@ app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-import httpx
-
-try:
-    response = httpx.get('https://api.openai.com/v1')
-    print(response.status_code)
-except Exception as e:
-    print(f"Network error: {e}")
-
 # from werkzeug.middleware.proxy_fix import ProxyFix
 #
 # app.wsgi_app = ProxyFix(
