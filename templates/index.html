@@ -9,9 +9,18 @@
 <h1>Chat Bot</h1>
 <br>
 <div id="chat">
+    {% for i in range(0, len, 2)%}
+        <p>User: {{previous_messages[i] | safe}}</p>
+        <p>Bot: {{previous_messages[i+1] | safe}}</p>
+    {% endfor %}
 </div>
-<label for="message">Chat here: </label> <input id="message" name="message" required type="text" value="">
-<input id="submit" name="submit" type="submit" value="Send">
+<div id="input-container">
+    <label for="message">Chat here:</label>
+    <div class="input-group">
+        <input id="message" name="message" required type="text" value="">
+        <input id="submit" name="submit" type="submit" value="Send">
+    </div>
+</div>
 <script src="{{ url_for('static', filename = 'js/script.js') }}"></script>
 </body>
 </html>

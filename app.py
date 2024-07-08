@@ -16,7 +16,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # )
 
 def get_weather(location):
-    url = "http://api.weatherapi.com/v1/current.json?key=bd9253c192f247cb9c835024241906&q=" + location
+    url = "https://api.weatherapi.com/v1/current.json?key=bd9253c192f247cb9c835024241906&q=" + location
     response = requests.get(url)
     data = response.json()
     return data
@@ -83,7 +83,6 @@ def get_weather_response(messages):
             frequency_penalty=0,
             presence_penalty=0
         )
-    print(response.choices[0].message.content)
     return response.choices[0].message.content
 
 @app.before_request
@@ -93,19 +92,36 @@ def ensure_messages_in_session():
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    previous_messages = []
 
-    return render_template("index.html")
+    if len(session['messages']) > 1:
+        i=1
+        for message in session['messages'][1:]:
+            if message['role'] == "system":
+                i=0
+            elif i < 1:
+                i = i+1
+            else:
+                i=1
+                previous_messages.append(markdown2.markdown(message['content'])[3:-5])
+
+    return render_template("index.html", previous_messages=previous_messages,
+                           len=len(previous_messages))
 
 @app.route("/message", methods=["POST"])
 def message():
-    query = request.data.decode("utf-8")
+    query = request.get_json()['message']
     session['messages'].append({"role": "user", "content": query})
-    #result2 = get_weather_response([{"role": "system", "content": "You are a helpful assistant."}, {"role": "user", "content": "who is amity blight?"}])
     result = get_weather_response(session['messages'])
     session['messages'].append({"role": "assistant", "content": result})
-    if (len(session['messages']) > 11):
+    if len(session['messages']) > 11:
         session['messages'].pop(1)
-        session['messages'].pop(1)
+        if session['messages'][1]['role'] == "system":
+            session['messages'].pop(1)
+            session['messages'].pop(1)
+            session['messages'].pop(1)
+        else:
+            session['messages'].pop(1)
     session.modified = True
     html_result = markdown2.markdown(result)
     return html_result
