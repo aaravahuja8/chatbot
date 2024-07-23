@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename = 'css/style.css') }}">
+    <title>Chat Bot</title>
+</head>
+<body>
+<a class="title" href="/"><h1>Chat Bot</h1></a>
+<div class="top">
+    {% if current_user.is_authenticated == False %}
+        <a href="/signup"><button class="right">Sign Up</button></a>
+        <a href="/login"><button class="right">Log In</button></a>
+    {% else %}
+        <a href="/logout"><button class="right">Log Out</button></a>
+    {% endif %}
+</div>
+<br>
+<p class="head">Log in to your account here! If you don't already have an account,
+    you can sign up <a href="/signup">here</a></p>
+<br>
+<form method="POST" action="{{url_for('login')}}">
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+        {{ form.username.label }} {{ form.username() }}
+    </div>
+    <div class="form-group">
+        {{ form.password.label }} {{ form.password() }}
+    </div>
+    <div class="form-group">
+        {{ form.rememberme.label }} {{ form.rememberme() }}
+    </div>
+    {% for message in get_flashed_messages() %}
+        <p class="flash">{{ message }}</p>
+    {% endfor %}
+    <br>
+    {{ form.submit() }}
+</form>
+</body>
+</html>

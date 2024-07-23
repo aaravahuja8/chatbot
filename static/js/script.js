@@ -35,3 +35,16 @@ document.getElementById("message").addEventListener("keypress", function(e) {
         sendMessage();
     }
 });
+
+function deleteChat() {
+    const xhttp = new XMLHttpRequest();
+    xhttp.onload = function() {
+        if (this.status === 200) {
+            document.getElementById("chat").innerHTML = "";
+        } else {
+            alert("Failed to delete chat.");
+        }
+    };
+    xhttp.open("DELETE", "/delete", true);
+    xhttp.send();
+}

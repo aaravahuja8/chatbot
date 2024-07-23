@@ -6,7 +6,16 @@
     <title>Chat Bot</title>
 </head>
 <body>
-<h1>Chat Bot</h1>
+<a class="title" href="/"><h1>Chat Bot</h1></a>
+<div class="top">
+    {% if current_user.is_authenticated == False %}
+        <a href="/signup"><button class="right">Sign Up</button></a>
+        <a href="/login"><button class="right">Log In</button></a>
+    {% else %}
+        <a href="/logout"><button class="right">Log Out</button></a>
+    {% endif %}
+</div>
+<br>
 <br>
 <div id="chat">
     {% for i in range(0, len, 2)%}
@@ -19,6 +28,9 @@
     <div class="input-group">
         <input id="message" name="message" required type="text" value="">
         <input id="submit" name="submit" type="submit" value="Send">
+        {% if current_user.is_authenticated == True %}
+            <button class="delete" onclick="deleteChat()">Delete Chat</button>
+        {% endif %}
     </div>
 </div>
 <script src="{{ url_for('static', filename = 'js/script.js') }}"></script>

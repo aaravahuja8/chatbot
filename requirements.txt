@@ -5,8 +5,11 @@ certifi==2024.6.2
 charset-normalizer==3.3.2
 click==8.1.7
 distro==1.9.0
+dnspython==2.6.1
 exceptiongroup==1.2.1
 Flask==3.0.3
+Flask-Login==0.6.3
+Flask-PyMongo==2.3.0
 Flask-WTF==1.2.1
 gevent==24.2.1
 greenlet==3.0.3
@@ -26,6 +29,7 @@ pandas==2.2.2
 pandas-stubs==2.2.2.240603
 pydantic==2.7.4
 pydantic_core==2.18.4
+pymongo==4.8.0
 python-dateutil==2.9.0.post0
 pytz==2024.1
 requests==2.32.3
