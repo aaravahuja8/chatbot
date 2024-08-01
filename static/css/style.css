@@ -67,7 +67,7 @@ ul {
     font-size: 14px;
 }
 
-.input-group input[type="submit"] {
+.input-group input[type="submit"], .chat-controls button {
     padding: 10px 18px;
     background-color: #007bff;
     color: #fff;
@@ -77,7 +77,7 @@ ul {
     font-size: 14px;
 }
 
-.input-group input[type="submit"]:hover {
+.input-group input[type="submit"]:hover, .chat-controls button:hover {
     background-color: #0056b3;
 }
 
@@ -200,4 +200,19 @@ form label, form input {
     text-align: center;
     font-family: Arial, sans-serif;
     font-size: 17px;
+}
+
+.chat-controls {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.chat-controls select {
+    padding: 8px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-right: 10px;
 }

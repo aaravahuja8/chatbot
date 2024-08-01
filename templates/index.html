@@ -33,6 +33,22 @@
         {% endif %}
     </div>
 </div>
+<br>
+<br>
+{% if current_user.is_authenticated == True %}
+<div class="chat-controls">
+    <select id="chats" onchange="updateChat()">
+        {% for i in range(chatlength) %}
+            {% if i == current %}
+                <option id="chat{{i}}" value={{i}} selected>{{chats[i]}}</option>
+            {% else %}
+                <option id="chat{{i}}" value={{i}}>{{chats[i]}}</option>
+            {% endif %}
+        {% endfor %}
+    </select>
+    <button class="create" onclick="newChat()">New Chat</button>
+</div>
+{% endif %}
 <script src="{{ url_for('static', filename = 'js/script.js') }}"></script>
 </body>
 </html>
