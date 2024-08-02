@@ -16,7 +16,9 @@ import json, requests, markdown2, os, datetime
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-weatherurl = "https://api.weatherapi.com/v1/current.json?key=" + os.getenv("WEATHER_API_KEY")
+weatherurlc = "https://api.weatherapi.com/v1/current.json?key=" + os.getenv("WEATHER_API_KEY")
+weatherurlf = "https://api.weatherapi.com/v1/forecast.json?key=" + os.getenv("WEATHER_API_KEY")
+weatherurla = "https://api.weatherapi.com/v1/astronomy.json?key=" + os.getenv("WEATHER_API_KEY")
 app.config["MONGO_URI"] = os.getenv("MONGODB_URI")
 mongo = PyMongo(app)
 chathistory = mongo.db.aarav_chat_history
@@ -63,16 +65,99 @@ class SignInForm(FlaskForm):
     rememberme = BooleanField("Keep me logged in")
     submit = SubmitField("Log In")
 
-def get_weather(location):
-    response = requests.get(weatherurl + "&q=" + location)
+def get_current_weather(location):
+    response = requests.get(weatherurlc + "&q=" + location)
     data = response.json()
     return data
+
+def get_weather_forecast(location, days):
+    response = requests.get(weatherurlf + "&q=" + location + "&days=" + days)
+    data = response.json()
+    returninfo = {
+        "location": data['location'],
+        "forecast": {
+            "forecastday": []
+        }
+    }
+    for day in data['forecast']['forecastday']:
+        tempdict = {
+            "date": day['date'],
+            "day": day['day'],
+            "astro": day['astro']
+        }
+        returninfo['forecast']['forecastday'].append(tempdict)
+    return returninfo
+
+def get_astronomy_data(location, date):
+    response = requests.get(weatherurla + "&q=" + location + "&dt=" + date)
+    data = response.json()
+    return data
+
+def rag(query):
+    from langchain_openai import ChatOpenAI
+    from langchain_community.document_loaders import TextLoader
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+    from langchain_chroma import Chroma
+    from langchain_openai import OpenAIEmbeddings
+    from langchain.chains.combine_documents import create_stuff_documents_chain
+    from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+    from typing import Dict
+    from langchain_core.runnables import RunnablePassthrough
+    from langchain_core.messages import HumanMessage
+
+    chat = ChatOpenAI(model="gpt-4o", temperature=1)
+    loader = TextLoader("example.txt")
+    data = loader.load()
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+    all_splits = text_splitter.split_documents(data)
+    vectorstore = Chroma.from_documents(documents=all_splits, embedding=OpenAIEmbeddings())
+    retriever = vectorstore.as_retriever()
+
+    SYSTEM_TEMPLATE = """
+    Answer the user's questions based on the below context. 
+    If the context doesn't contain any relevant information to the question, don't make something up and just say "I don't know":
+
+    <context>
+    {context}
+    </context>
+    """
+
+    question_answering_prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                SYSTEM_TEMPLATE,
+            ),
+            MessagesPlaceholder(variable_name="messages"),
+        ]
+    )
+
+    document_chain = create_stuff_documents_chain(chat, question_answering_prompt)
+
+    def parse_retriever_input(params: Dict):
+        return params["messages"][-1].content
+
+    retrieval_chain = RunnablePassthrough.assign(
+        context=parse_retriever_input | retriever,
+    ).assign(
+        answer=document_chain,
+    )
+
+    response = retrieval_chain.invoke(
+        {
+        "messages": [
+            HumanMessage(content=query)
+        ],
+    }
+    )
+
+    return response['answer']
 
 tools=[
     {
         "type": "function",
         "function": {
-            "name": "get_weather",
+            "name": "get_current_weather",
             "description": "Gets the current weather at the specified location",
             "parameters": {
                 "type": "object",
@@ -83,6 +168,66 @@ tools=[
                     }
                 },
                 "required": ["location"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_weather_forecast",
+            "description": "Gets the forecasted weather at the specified location for a specified number of days up to 3",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "The name of the town or city"
+                    },
+                    "days": {
+                        "type": "string",
+                        "description": "The number of days to get the forecast for"
+                    }
+                },
+                "required": ["location", "days"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_astronomy_data",
+            "description": "Gets the basic astronomy data such as sunrise, sunset, moonrise, moonset, moon phase, "
+                           "and illumination at the specified location on the specified date",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "The name of the town or city"
+                    },
+                    "date": {
+                        "type": "string",
+                        "description": "The date to get the data for in yyyy-mm-dd format"
+                    }
+                },
+                "required": ["location", "date"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "rag",
+            "description": "Gets information about the plot of the movie Despicable Me 4",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The user's query about the movie"
+                    }
+                },
+                "required": ["query"]
             }
         }
     }
@@ -113,13 +258,46 @@ def get_weather_response(messages):
         presence_penalty=0
     )
 
-    if (response.choices[0].message.tool_calls != None):
-        arguments = response.choices[0].message.tool_calls[0].function.arguments
-        data = json.loads(arguments)
-        location = data['location']
-        weather_data = get_weather(location)
-        messages.append({"role": "system", "content": "Answer this weather information. If there is no information, say so to the user."})
-        messages.append({"role": "user", "content": f"Here is the weather in {location}: {weather_data}"})
+    while (response.choices[0].message.tool_calls != None):
+        name = response.choices[0].message.tool_calls[0].function.name
+        match name:
+            case "get_current_weather":
+                arguments = response.choices[0].message.tool_calls[0].function.arguments
+                data = json.loads(arguments)
+                location = data['location']
+                weather_data = get_current_weather(location)
+                messages.append({"role": "system",
+                                 "content": "Answer this weather information. If there is no information, say so to the user."})
+                messages.append({"role": "user", "content": f"Here is the weather in {location}: {weather_data}"})
+            case "get_weather_forecast":
+                arguments = response.choices[0].message.tool_calls[0].function.arguments
+                data = json.loads(arguments)
+                location = data['location']
+                days = data['days']
+                weather_data = get_weather_forecast(location, days)
+                messages.append({"role": "system",
+                                 "content": "Answer this weather information. If there is no information, say so to the user."})
+                messages.append({"role": "user", "content": f"Here is the weather forecast for {location}: {weather_data}"})
+            case "get_astronomy_data":
+                arguments = response.choices[0].message.tool_calls[0].function.arguments
+                data = json.loads(arguments)
+                location = data['location']
+                date = data['date']
+                astronomy_data = get_astronomy_data(location, date)
+                messages.append({"role": "system",
+                                 "content": "Answer this astronomy information. If there is no information, say so to the user."})
+                messages.append({"role": "user", "content": f"Here is the astronomy data for {location}: {astronomy_data}"})
+            case "rag":
+                arguments = response.choices[0].message.tool_calls[0].function.arguments
+                data = json.loads(arguments)
+                query = data['query']
+                result = rag(query)
+                print(result)
+                messages.append({"role": "system",
+                                 "content": "Answer this movie information. If there is no information, say so to the user."})
+                messages.append(
+                    {"role": "user", "content": f"Here is the query result for {query}: {result}"})
+
         response = client.chat.completions.create(
             model="gpt-4o",
             tools=tools,
@@ -198,18 +376,22 @@ def message():
     if len(recentmessages) > 11:
         recentmessages.pop(1)
         if recentmessages[1]['role'] == "system":
-            recentmessages.pop(1)
-            recentmessages.pop(1)
+            while recentmessages[1]['role'] == "system":
+                recentmessages.pop(1)
+                recentmessages.pop(1)
             recentmessages.pop(1)
         else:
             recentmessages.pop(1)
 
     if current_user.is_authenticated:
         if len(recentmessages) > 4 and recentmessages[-3]['role'] == "system":
-            chat.append(recentmessages[-4])
-            chat.append(recentmessages[-3])
-            chat.append(recentmessages[-2])
-            chat.append(recentmessages[-1])
+            i=4
+            while len(recentmessages) > i and recentmessages[-i+1]['role'] == "system":
+                i = i+2
+            i = i-2
+            while i > 0:
+                chat.append(recentmessages[-i])
+                i = i-1
         else:
             chat.append(recentmessages[-2])
             chat.append(recentmessages[-1])
